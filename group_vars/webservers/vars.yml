@@ -1,0 +1,21 @@
+redmine_port: 3000
+redmine_image: redmine:latest
+redmine_container_name: redmine
+redmine_app_dir: /opt/redmine
+
+redmine_db_host: "rc1a-9mem564p97jk17b4.mdb.yandexcloud.net"
+redmine_db_port: "6432"
+redmine_db_name: "redmine"
+redmine_db_user: "redmine"
+redmine_db_password: "{{ vault_redmine_db_password }}"
+
+datadog_api_key: "{{ vault_datadog_api_key }}"
+datadog_site: "datadoghq.eu"
+datadog_checks:
+  http_check:
+    init_config:
+    instances:
+      - name: redmine_local_check
+        url: "http://localhost:3000"
+        timeout: 5
+        method: GET

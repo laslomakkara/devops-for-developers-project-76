@@ -1,0 +1,8 @@
+.env
+*.pem
+*.key
+*.log
+*.retry
+.vault_pass
+vault-password-file
+.DS_Store

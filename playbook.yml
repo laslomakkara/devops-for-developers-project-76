@@ -1,0 +1,78 @@
+- name: Prepare and deploy Redmine
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 0
+      tags:
+        - prepare
+
+  roles:
+    - role: geerlingguy.pip
+      tags:
+        - prepare
+
+    - role: geerlingguy.docker
+      tags:
+        - prepare
+
+  tasks:
+    - name: Check required Redmine database variables
+      ansible.builtin.fail:
+        msg: "Redmine database host and password are required"
+      when: redmine_db_host == "" or redmine_db_password == ""
+      tags:
+        - never
+        - deploy
+
+    - name: Create Redmine application directory
+      ansible.builtin.file:
+        path: "{{ redmine_app_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+      tags:
+        - never
+        - deploy
+
+    - name: Create Redmine environment file
+      ansible.builtin.template:
+        src: templates/redmine.env.j2
+        dest: "{{ redmine_app_dir }}/.env"
+        owner: root
+        group: root
+        mode: "0600"
+      tags:
+        - never
+        - deploy
+
+    - name: Start Redmine container
+      community.docker.docker_container:
+        name: "{{ redmine_container_name }}"
+        image: "{{ redmine_image }}"
+        pull: true
+        state: started
+        restart_policy: always
+        recreate: true
+        env_file: "{{ redmine_app_dir }}/.env"
+        published_ports:
+          - "{{ redmine_port }}:3000"
+      tags:
+        - never
+        - deploy
+
+- name: Install and configure Datadog Agent
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Import Datadog Agent role
+      ansible.builtin.import_role:
+        name: datadog.dd.agent
+      tags:
+        - never
+        - monitoring
